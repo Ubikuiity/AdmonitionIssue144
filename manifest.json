@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
+	"id": "admonition-issue-144",
+	"name": "AdmonitionIssue144",
+	"version": "1.0",
 	"minAppVersion": "0.15.0",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+	"description": "This is a custom correction for Admonition Issue 144.",
+	"author": "Ubikuiity",
+	"authorUrl": "https://github.com/Ubikuiity",
+	"isDesktopOnly": true
 }
