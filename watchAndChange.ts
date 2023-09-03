@@ -45,9 +45,10 @@ export class fileWatcher {
         this.watcher = watch(basePath, {recursive: true}, (eventType, fileName) => {
             if (eventType=="rename")
             {
-                // TODO Need to add the case of directory renames...
-                if (fileName && !(fileName.includes(".obsidian")))
+                // Add the case of directory renames ?
+                if (fileName && !(fileName.includes(".obsidian")))  // Check the watcher gave us the name and it is not an obsidian file
                 {
+                    if (fileName.slice(-3) == `.md`)  // If a markdown file has been renamed
                     this.fileNameBuffer.addChangeName(fileName);
                 }
             }
@@ -79,7 +80,7 @@ class customNameBuffer {
         if (this.nameBuffer.length >= 2) {
             let oldName: string = this.nameBuffer[0];
             let newName: string = this.nameBuffer[1];
-            console.log(`Detected renaming of file ${oldName} to ${newName}`);
+            console.debug(`Detected renaming of file ${oldName} to ${newName}`);
             this.fWatcher.linksFinder.replaceLinks(oldName, newName);
 
             // clear buffer after calling the function that will replace links
@@ -113,13 +114,12 @@ class formerLinksReplacer {
             // vault is too long to update so it will bring an error if it tries to read a file which name just has been changed
             if (mdFile.name == `${minimalLink}.md`) continue;
 
-            // console.log(`going through file ${mdFile.name}`);
             const content: string = await this.mainPlugin.app.vault.cachedRead(mdFile);
 
             // First check to avoid further inspection of most of files
             if (content.includes(minimalLink)) {
                 // This file needs further inspection, beginning of analysis of the file ...
-                console.log(`Looking in depth in file ${mdFile.name} ...`);
+                console.debug(`Looking in depth in file ${mdFile.name} ...`);
                 // Prepare for potential changes to the file
                 let rewrittenContent: string[] = [];  // This stores the content that will be rewritten in file
                 let hasChanged: Boolean = false;   // This boolean monitor if we need to rewrite the file or not at the end of analysis
@@ -131,7 +131,7 @@ class formerLinksReplacer {
 
                 let regexMatch: RegExpMatchArray | null;
                 while ((regexMatch = remainingText.match(reAdmonitionCodeblocks)) !== null) {  // While we keep finding codeblocks
-                    console.log(`Found CodeBlock ${regexMatch}`);
+                    console.debug(`Found CodeBlock ${regexMatch}`);
                     let codeBlockText = regexMatch[0];
                     const splitContent: string[] = splitFirstOccurrence(remainingText, codeBlockText);
                     rewrittenContent.push(splitContent[0]);  // Add the first part of split to rewritten content
@@ -140,7 +140,7 @@ class formerLinksReplacer {
                     const reLinksToReplace = new RegExp(`\\[{2}.*${minimalLink}.*\\]{2}`);
                     let linkMatch: RegExpMatchArray | null;
                     while ((linkMatch = codeBlockText.match(reLinksToReplace)) !== null) {  // While we keep finding links
-                        console.log(`Found link ${linkMatch}`);
+                        console.debug(`Found link ${linkMatch}`);
                         let linkToReplace = linkMatch[0];
                         const splitCodeBlock: string[] = splitFirstOccurrence(codeBlockText, linkToReplace);
                         rewrittenContent.push(splitCodeBlock[0])  // Add the first part of codeBlock to rewritten content
@@ -196,7 +196,7 @@ class formerLinksReplacer {
         const basePath = (this.mainPlugin.app.vault.adapter as any).basePath;
         const finalSavePath: string = path.join(basePath, file.path);
 
-        console.log(`rewriting file... :\n ${finalSavePath}`);
+        console.debug(`rewriting file... :\n ${finalSavePath}`);
         const data = new Uint8Array(Buffer.from(content));
         writeFile(finalSavePath, data, (err) => {if (err) throw err;});
     }
