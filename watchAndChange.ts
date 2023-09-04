@@ -38,6 +38,7 @@ export class fileWatcher {
         this.mainPlugin = plugin;
         this.linksFinder = new formerLinksReplacer(plugin);
         this.fileNameBuffer = new customNameBuffer(this);
+        console.log("Custom correction for Admonition issue 144 monitoring file renames");
     }
 
     monitorChanges() {
@@ -86,9 +87,15 @@ class customNameBuffer {
             // clear buffer after calling the function that will replace links
             this.clearBuffer();
         }
+        else {
+            // Empty buffer after 200 ms to avoid possible residues
+            // This is to avoid filling buffer with only one value if a file is being created or deleted
+            setTimeout(this.clearBuffer, 200);
+        }
     }
 
-    clearBuffer() {
+    // Magical arrow function to solve the "this" reference issue in setTimeout
+    clearBuffer = () => {
         this.nameBuffer = [];
     }
 }
@@ -131,13 +138,15 @@ class formerLinksReplacer {
 
                 let regexMatch: RegExpMatchArray | null;
                 while ((regexMatch = remainingText.match(reAdmonitionCodeblocks)) !== null) {  // While we keep finding codeblocks
-                    console.debug(`Found CodeBlock ${regexMatch}`);
+                    // console.debug(`Found CodeBlock ${regexMatch}`);
                     let codeBlockText = regexMatch[0];
                     const splitContent: string[] = splitFirstOccurrence(remainingText, codeBlockText);
                     rewrittenContent.push(splitContent[0]);  // Add the first part of split to rewritten content
 
                     // Regexp to find links containing the minimal link to the file being renamed
-                    const reLinksToReplace = new RegExp(`\\[{2}.*${minimalLink}.*\\]{2}`);
+                    // the "( *|.*/)" is to make sure we dont rename a link containing the end of the minimalLink
+                    // For example, our file has been renamed from "Test", we don't want links "AnotherTest" to be changed to "AnotherX"
+                    const reLinksToReplace = new RegExp(`\\[{2}( *|.*/)${minimalLink}.*\\]{2}`);
                     let linkMatch: RegExpMatchArray | null;
                     while ((linkMatch = codeBlockText.match(reLinksToReplace)) !== null) {  // While we keep finding links
                         console.debug(`Found link ${linkMatch}`);
@@ -152,7 +161,7 @@ class formerLinksReplacer {
                         // Check that we have a match, else we issue a warning
                         if (!wordsToReplaceMatch) {
                             // This warning is normal if link contains the name of renamed file but doesn't point towards that file
-                            console.warn(`Unexpected link syntax, Could not change link ${linkToReplace} in file ${oldName}`);
+                            console.debug(`Unexpected link syntax, Could not change link ${linkToReplace} in file ${oldName}`);
                             // Set everything for skipping
                             rewrittenContent.push(linkToReplace);
                             codeBlockText = splitCodeBlock[1];
@@ -176,7 +185,7 @@ class formerLinksReplacer {
                     }
 
                     // When we finished analysing all links, add end of codeBlock to the rewritten content
-                    rewrittenContent.push(codeBlockText)
+                    rewrittenContent.push(codeBlockText);
                     
                     // Now we remove the codeBlock we analysed and all above of the text to keep looking for more codeblocks
                     remainingText = splitContent[1];
